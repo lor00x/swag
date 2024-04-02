@@ -24,6 +24,29 @@ Golang 1.16+
 go get -u github.com/zc2638/swag@v1.4.3
 ```
 
+## 使用注意：
+time.time类型使用jsonTag来将其解析为string类型
+```go
+type XXX struct{
+  Now time.Time `json:",string"`
+}
+```
+
+兼容的解析如下：
+```go
+type xxx struct {
+    MapSlicePtr       map[string][]*string
+    MapSlice          map[string][]string
+    MapSliceStructPtr map[string][]*Person
+    MapSliceStruct    map[string][]Person
+    SliceStructPtr    *[]*Person
+    SliceStruct       *[]Person
+    SliceStringPtr    *[]*string
+    SliceString       *[]string
+}
+
+```
+
 **Tip:** 从 `v1.2.0` 开始，低版本不再兼容。为了兼容大部分的web框架，整体架构做了很大的改动。
 
 ## 默认 Swagger UI 服务器
