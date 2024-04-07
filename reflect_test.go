@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,9 +55,9 @@ type Pet struct {
 	MapSlice          map[string][]string
 	MapSliceStructPtr map[string][]*Person
 	MapSliceStruct    map[string][]Person
-	SliceStructPtr    *[]*Person
+	SliceStructPtr    []*Person
 	SliceStruct       *[]Person
-	SliceStringPtr    *[]*string
+	SliceStringPtr    []*string
 	SliceString       *[]string
 	MapNestOptions    *MapObj `json:"map_nest_options,omitempty"`
 }
@@ -78,7 +79,6 @@ func TestDefine(t *testing.T) {
 	v := define(Pet{})
 	obj, ok := v["github.com_zc2638_swag.Pet"]
 	assert.True(t, ok)
-	assert.False(t, obj.IsArray)
 	assert.Equal(t, 26, len(obj.Properties))
 
 	content := make(map[string]Object)
@@ -88,7 +88,6 @@ func TestDefine(t *testing.T) {
 	assert.Nil(t, err)
 	expected := content["github.com_zc2638_swag.Pet"]
 
-	assert.Equal(t, expected.IsArray, obj.IsArray, "expected IsArray to match")
 	assert.Equal(t, expected.Type, obj.Type, "expected Type to match")
 	assert.Equal(t, expected.Required, obj.Required, "expected Required to match")
 	assert.Equal(t, len(expected.Properties), len(obj.Properties), "expected same number of properties")
@@ -96,12 +95,11 @@ func TestDefine(t *testing.T) {
 	for k, v := range obj.Properties {
 		e := expected.Properties[k]
 		assert.Equal(t, e.Type, v.Type, "expected %v.Type to match", k)
-		assert.Equal(t, e.Description, v.Description, "expected %v.Required to match", k)
-		assert.Equal(t, e.Enum, v.Enum, "expected %v.Required to match", k)
-		assert.Equal(t, e.Format, v.Format, "expected %v.Required to match", k)
-		assert.Equal(t, e.Ref, v.Ref, "expected %v.Required to match", k)
-		assert.Equal(t, e.Example, v.Example, "expected %v.Required to match", k)
-		assert.Equal(t, e.Items, v.Items, "expected %v.Required to match", k)
+		assert.Equal(t, e.Description, v.Description, "expected %v.Description to match", k)
+		assert.Equal(t, e.Enum, v.Enum, "expected %v.Enum to match", k)
+		assert.Equal(t, e.Format, v.Format, "expected %v.Format to match", k)
+		assert.Equal(t, e.Ref, v.Ref, "expected %v.Ref to match", k)
+		assert.Equal(t, e.Example, v.Example, "expected %v.Example to match", k)
 	}
 }
 
@@ -109,21 +107,18 @@ func TestNotStructDefine(t *testing.T) {
 	v := define(int32(1))
 	obj, ok := v["int32"]
 	assert.True(t, ok)
-	assert.False(t, obj.IsArray)
 	assert.Equal(t, "integer", obj.Type)
 	assert.Equal(t, "int32", obj.Format)
 
 	v = define(uint64(1))
 	obj, ok = v["uint64"]
 	assert.True(t, ok)
-	assert.False(t, obj.IsArray)
 	assert.Equal(t, "integer", obj.Type)
 	assert.Equal(t, "int64", obj.Format)
 
 	v = define("")
 	obj, ok = v["string"]
 	assert.True(t, ok)
-	assert.False(t, obj.IsArray)
 	assert.Equal(t, "string", obj.Type)
 	assert.Equal(t, "", obj.Format)
 
@@ -132,32 +127,23 @@ func TestNotStructDefine(t *testing.T) {
 	if !assert.True(t, ok) {
 		fmt.Printf("%v", v)
 	}
-	assert.False(t, obj.IsArray)
 	assert.Equal(t, "integer", obj.Type)
 	assert.Equal(t, "int32", obj.Format)
 
-	v = define([]byte{1, 2})
-	obj, ok = v["uint8"]
-	if !assert.True(t, ok) {
-		fmt.Printf("%v", v)
-	}
-	assert.True(t, obj.IsArray)
-	assert.Equal(t, "integer", obj.Type)
-	assert.Equal(t, "int32", obj.Format)
+	bs := []byte{1, 2}
+	v = define(bs)
+	bsName := makeName(reflect.TypeOf(bs))
+	obj, ok = v[bsName]
+	assert.Equal(t, true, ok)
+	assert.Equal(t, "array", obj.Type)
+	assert.NotEqual(t, nil, obj.Items)
+	assert.Equal(t, "integer", obj.Items.Type)
+	assert.Equal(t, "int32", obj.Items.Format)
 }
 
 func TestHonorJsonIgnore(t *testing.T) {
 	v := define(Empty{})
 	obj, ok := v["github.com_zc2638_swag.Empty"]
 	assert.True(t, ok)
-	assert.False(t, obj.IsArray)
 	assert.Equal(t, 0, len(obj.Properties), "expected zero exposed properties")
-}
-
-func TestMakeSchemaType(t *testing.T) {
-	sliceSchema := MakeSchema([]string{})
-	assert.Equal(t, "array", sliceSchema.Type, "expect array type but get %s", sliceSchema.Type)
-
-	objSchema := MakeSchema(struct{}{})
-	assert.Equal(t, "", objSchema.Type, "expect array type but get %s", objSchema.Type)
 }
