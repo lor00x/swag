@@ -12,7 +12,7 @@ require (
 )
 
 retract (
-    v0.1.0
-    v1.2.0
-    v1.14.0 // incorrect tag
+        v0.1.0
+        v1.2.0
+        v1.14.0 // incorrect tag
 )
