@@ -11,9 +11,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-retract v0.1.0
-
-retract v1.2.0
-
-// this is an incorrect release
-retract v1.14.0
+retract (
+    v0.1.0
+    v1.2.0
+    v1.14.0 // incorrect tag
+)
